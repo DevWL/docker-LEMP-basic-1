@@ -1,0 +1,55 @@
+version: "3.9"
+
+volumes:
+  sitefiles:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /c/laragon/www/docker/nginx-mysql-php/html
+  nginx_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /c/laragon/www/docker/nginx-mysql-php/docker-compose/etc/nginx/conf.d
+  mysql_dump:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /c/laragon/www/docker/nginx-mysql-php/docker-compose/mysql/dump
+
+services:
+  web:
+    build:
+      context: /c/laragon/www/docker/nginx-mysql-php
+      dockerfile: Dockerfile
+    image: myapp
+    container_name: myapp-con
+    restart: unless-stopped
+    working_dir: /usr/share/nginx
+
+  nginx:
+    image: nginx
+    container_name: nginx-con
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - sitefiles:/usr/share/nginx/html
+      - nginx_config:/etc/nginx/conf.d
+
+  db:
+    image: mysql
+    container_name: mymysql-con
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_USER: ${DB_USER}
+      SERVICE_TAG: dev
+      SERVICE_NAME: mymysql
+    volumes:
+      - mysql_dump:/docker-entrypoint-initdb.d
